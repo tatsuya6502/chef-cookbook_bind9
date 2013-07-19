@@ -103,6 +103,17 @@ search(:zones).each do |zone|
     group "root"
     mode 0644
     notifies :restart, resources(:service => "bind9")
+    variables({
+      :serial => Time.new.strftime("%Y%m%d%H%M%S")
+    })
+    action :nothing
+  end
+
+  template "#{node[:bind9][:data_path]}/#{zone['domain']}.erb" do
+    source "zonefile.erb"
+    owner "root"
+    group "root"
+    mode 0644
 
     network_interface = node[:bind9][:network_interface]
     if network_interface.nil?
@@ -113,24 +124,13 @@ search(:zones).each do |zone|
     end
 
     variables({
-      :serial => Time.new.strftime("%Y%m%d%H%M%S"),
-      :ns_ipaddress => ns_ipaddress
-    })
-    action :nothing
-  end
-
-  template "#{node[:bind9][:data_path]}/#{zone['domain']}.erb" do
-    source "zonefile.erb"
-    owner "root"
-    group "root"
-    mode 0644
-    variables({
       :domain => zone['domain'],
       :soa => zone['zone_info']['soa'],
       :contact => zone['zone_info']['contact'],
       :global_ttl => zone['zone_info']['global_ttl'],
       :nameserver => zone['zone_info']['nameserver'],
       :mail_exchange => zone['zone_info']['mail_exchange'],
+      :ns_ipaddress => ns_ipaddress,
       :records => zone['zone_info']['records']
     })
     notifies :create, resources(:template => "#{node[:bind9][:data_path]}/#{zone['domain']}"), :immediately
