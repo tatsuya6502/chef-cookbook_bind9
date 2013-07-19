@@ -16,10 +16,9 @@ $TTL <%= @global_ttl %>
                            IN    MX <%= mx['priority'] %> <%= mx['host'] %>
 <% end %>
 
-                           IN     A <%= node['ipaddress'] %>
-ns                         IN     A <%= node['ipaddress'] %>
+                           IN     A <%= @ns_ipaddress %>
+ns                         IN     A <%= @ns_ipaddress %>
 
 <% @records.each do |record| -%>
 <%= "%-20s %5s IN %5s %s" % [record['name'],record['ttl'],record['type'],record['ip']] %>
 <% end %>
-

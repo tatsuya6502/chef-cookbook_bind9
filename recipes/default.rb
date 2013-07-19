@@ -87,7 +87,7 @@ end
 search(:zones).each do |zone|
   unless zone['autodomain'].nil? || zone['autodomain'] == ''
     search(:node, "domain:#{zone['autodomain']}").each do |host|
-      next if host['ipaddress'] == '' || host['ipaddress'].nil?
+      next if host['ipaddress'].nil? || host['ipaddress'] == ''
       zone['zone_info']['records'].push({
         "name" => host['hostname'],
         "type" => "A",
@@ -114,6 +114,15 @@ search(:zones).each do |zone|
     owner "root"
     group "root"
     mode 0644
+
+    network_interface = node[:bind9][:network_interface]
+    if network_interface.nil?
+      ns_ipaddress = node[:ipaddress]
+    else
+      addresses = node[:network][:interfaces][network_interface][:addresses]
+      ns_ipaddress = addresses.select { |address, data| data['family'] == 'inet' }.keys[0]
+    end
+
     variables({
       :domain => zone['domain'],
       :soa => zone['zone_info']['soa'],
@@ -121,6 +130,7 @@ search(:zones).each do |zone|
       :global_ttl => zone['zone_info']['global_ttl'],
       :nameserver => zone['zone_info']['nameserver'],
       :mail_exchange => zone['zone_info']['mail_exchange'],
+      :ns_ipaddress => ns_ipaddress,
       :records => zone['zone_info']['records']
     })
     notifies :create, resources(:template => "#{node[:bind9][:data_path]}/#{zone['domain']}"), :immediately

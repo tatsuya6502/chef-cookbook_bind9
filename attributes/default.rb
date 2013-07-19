@@ -1,10 +1,14 @@
+# Network interface of the name server. (e.g. "eth1")
+# Default is nil and node['ipaddress'] is used.
+default[:bind9][:network_interface] = nil  #
+
 default[:bind9][:enable_ipv6] = true
 
 # Allow only local clients to query the nameserver, with recursion
 default[:bind9][:allow_query] = ["localnets", "localhost"]
 default[:bind9][:allow_recursion] = ["localnets", "localhost"]
 
-# Don:t allow to mess with zone files by default
+# Don't allow to mess with zone files by default
 default[:bind9][:allow_transfer] = ["none"]
 default[:bind9][:allow_update] = nil
 
