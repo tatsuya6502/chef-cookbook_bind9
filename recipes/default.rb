@@ -96,14 +96,6 @@ search(:zones).each do |zone|
     end
   end
 
-  network_interface = node[:bind9][:network_interface]
-  if network_interface.nil?
-    ns_ipaddress = node[:ipaddress]
-  else
-    addresses = node[:network][:interfaces][network_interface][:addresses]
-    ns_ipaddress = addresses.select { |address, data| data['family'] == 'inet' }.keys[0]
-  end
-
   template "#{node[:bind9][:data_path]}/#{zone['domain']}" do
     source "#{node[:bind9][:data_path]}/#{zone['domain']}.erb"
     local true
@@ -111,6 +103,15 @@ search(:zones).each do |zone|
     group "root"
     mode 0644
     notifies :restart, resources(:service => "bind9")
+
+    network_interface = node[:bind9][:network_interface]
+    if network_interface.nil?
+      ns_ipaddress = node[:ipaddress]
+    else
+      addresses = node[:network][:interfaces][network_interface][:addresses]
+      ns_ipaddress = addresses.select { |address, data| data['family'] == 'inet' }.keys[0]
+    end
+
     variables({
       :serial => Time.new.strftime("%Y%m%d%H%M%S"),
       :ns_ipaddress => ns_ipaddress
