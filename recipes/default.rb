@@ -87,13 +87,21 @@ end
 search(:zones).each do |zone|
   unless zone['autodomain'].nil? || zone['autodomain'] == ''
     search(:node, "domain:#{zone['autodomain']}").each do |host|
-      next if host['ipaddress'] == '' || host['ipaddress'].nil?
+      next if host['ipaddress'].nil? || host['ipaddress'] == ''
       zone['zone_info']['records'].push({
         "name" => host['hostname'],
         "type" => "A",
         "ip" => host['ipaddress']
       })
     end
+  end
+
+  network_interface = node[:bind9][:network_interface]
+  if network_interface.nil?
+    ns_ipaddress = node[:ipaddress]
+  else
+    addresses = node[:network][:interfaces][network_interface][:addresses]
+    ns_ipaddress = addresses.select { |address, data| data['family'] == 'inet' }.keys[0]
   end
 
   template "#{node[:bind9][:data_path]}/#{zone['domain']}" do
@@ -104,7 +112,8 @@ search(:zones).each do |zone|
     mode 0644
     notifies :restart, resources(:service => "bind9")
     variables({
-      :serial => Time.new.strftime("%Y%m%d%H%M%S")
+      :serial => Time.new.strftime("%Y%m%d%H%M%S"),
+      :ns_ipaddress => ns_ipaddress
     })
     action :nothing
   end
